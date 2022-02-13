@@ -1,0 +1,30 @@
+﻿<Properties StartupConfiguration="{EB3D18A6-5EDB-4F7D-89F3-EB0BF0920AC5}|Default">
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.ItemProperties.src.Server.Client FirstBuild="True" />
+  <MonoDevelop.Ide.Workbench>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="Bot" expanded="True">
+            <Node name="src" expanded="True">
+              <Node name="Server.Client" expanded="True" />
+              <Node name="Server.Server" expanded="True" selected="True" />
+              <Node name="Server.Shared" expanded="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+      <Pad Id="MonoDevelop.Debugger.WatchPad">
+        <State />
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.ItemProperties.src.Server.Server FirstBuild="True" />
+  <MonoDevelop.Ide.ItemProperties.src.Server.Shared FirstBuild="True" />
+  <MonoDevelop.Ide.ItemProperties.src.Client PreferredExecutionTarget="MonoDevelop.Default" />
+  <MultiItemStartupConfigurations />
+</Properties>

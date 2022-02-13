@@ -1,0 +1,287 @@
+@page "/Hexapod"
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.Json
+@using System.Linq
+@using System.Globalization
+@inject NavigationManager _navigationManager
+@implements IAsyncDisposable
+
+<MudText Typo="Typo.h3" GutterBottom="true">Hexapod</MudText>
+<MudText Typo="Typo.body2" GutterBottom="true">Uptime: @_upTime</MudText>
+<MudGrid Justify="Justify.SpaceEvenly">
+    <MudItem xs="4">
+        <MudPaper Elevation="0" Class="d-flex flex-column py-8 px-8">
+            <MudText Typo="Typo.h6" GutterBottom="false">Led Ring</MudText>
+            @*
+            <MudSelect T="LedMode" @bind-Value="_selectedMode">
+                <MudSelectItem T="LedMode" Value="LedMode.None">None</MudSelectItem>
+                <MudSelectItem T="LedMode" Value="LedMode.Rainbow">Rainbow</MudSelectItem>
+                <MudSelectItem T="LedMode" Value="LedMode.RainbowCycle">Rainbow Cycle</MudSelectItem>
+                <MudSelectItem T="LedMode" Value="LedMode.TheaterChase">Theater Chase</MudSelectItem>
+                <MudSelectItem T="LedMode" Value="LedMode.TheaterChaseRainbow">Theater Chase Rainbox</MudSelectItem>
+                <MudSelectItem T="LedMode" Value="LedMode.Wipe">Wipe</MudSelectItem>
+            </MudSelect>
+            *@
+            <MudButton
+                Variant="Variant.Filled"
+                Color="Color.Primary"
+                Class="px-8 my-8"
+                @onclick="SendLedMode">
+                Set Mode
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12">
+        <MudPaper Elevation="0" Class="d-flex flex-column py-8 px-8">
+            <MudText Typo="Typo.h6" GutterBottom="false">Distance</MudText>
+            <MudChart
+                ChartType="ChartType.Line"
+                ChartSeries="@_distances"
+                XAxisLabels="@_distanceLabels"
+                Width="100%"
+                Height="300px"
+                ChartOptions="_distanceOptions">
+            </MudChart>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6">
+        <MudPaper Elevation="0" Class="d-flex flex-column py-8 px-8">
+            <MudText Typo="Typo.h6" GutterBottom="false">Voltage</MudText>
+            <MudChart
+                ChartType="ChartType.Line"
+                ChartSeries="@_voltages"
+                XAxisLabels="@_voltageLabels"
+                Width="100%"
+                Height="175px"
+                ChartOptions="_voltageOptions">
+            </MudChart>
+            <MudText Typo="Typo.caption" GutterBottom="false">Channel 0: @_channel0</MudText>
+            <MudText Typo="Typo.caption" GutterBottom="false">Channel 4: @_channel4</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="4" Style="height:300px;overflow: auto;">
+        <MudPaper Elevation="0" Height="3500px" Class="d-flex flex-column py-8 px-8">
+            <MudText Typo="Typo.h6" GutterBottom="false">Mesages</MudText>
+            @foreach (var message in _messages)
+            {
+                <MudText Typo="Typo.body1" Align="Align.Left">@message</MudText>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudPaper Class="d-flex flex-column align-center justify-center mud-width-full py-8">
+            <MudText Typo="Typo.h6" GutterBottom="true">Chat</MudText>
+            <MudTextField @bind-Value="ChatMessage" Label="Message" Variant="Variant.Outlined" Class="mud-width-full px-8"></MudTextField>
+            <MudButton
+                Variant="Variant.Filled"
+                Color="Color.Primary"
+                Disabled="string.IsNullOrWhiteSpace(ChatMessage)"
+                Class="px-8 my-8"
+                @onclick="() => SendChat(ChatMessage)">
+                Chat
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="8">
+        <MudPaper Class="d-flex flex-column align-center justify-center mud-width-full py-8">
+            <MudButton
+                Variant="Variant.Filled"
+                Color="Color.Primary"
+                Class="px-8 my-8"
+                @onclick="I2CDetect">
+                I2CDetect
+            </MudButton>
+            <MudText Typo="Typo.h6" GutterBottom="true">I2CDetect</MudText>
+        @*
+            <MudTable
+                Items="_devices"
+                Hover="true"
+                Breakpoint="Breakpoint.Sm"
+                T="DeviceRow">
+                <HeaderContent>
+                    <MudTh></MudTh>
+                    <MudTh>0</MudTh>
+                    <MudTh>1</MudTh>
+                    <MudTh>2</MudTh>
+                    <MudTh>3</MudTh>
+                    <MudTh>4</MudTh>
+                    <MudTh>5</MudTh>
+                    <MudTh>6</MudTh>
+                    <MudTh>7</MudTh>
+                    <MudTh>8</MudTh>
+                    <MudTh>9</MudTh>
+                    <MudTh>a</MudTh>
+                    <MudTh>b</MudTh>
+                    <MudTh>c</MudTh>
+                    <MudTh>d</MudTh>
+                    <MudTh>e</MudTh>
+                    <MudTh>f</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="DevicesRow">@context.RowNumber</MudTd>
+                    @foreach (var device in context.Devices)
+                    {
+                        <MudTd Style="@GetI2CDetectStyle(device)">@device</MudTd>
+                    }
+                </RowTemplate>
+            </MudTable>
+            *@
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string? ChatMessage { get; set; }
+    private HubConnection? _hubConnection;
+    private readonly List<string> _messages = new();
+    //private List<DeviceRow>? _devices = new();
+
+    //private readonly List<VoltageReading> _rawVoltages = new();
+    private string[] _voltageLabels = new string[10];
+    private List<ChartSeries> _voltages = new();
+    private readonly ChartOptions _voltageOptions = new();
+    private string _channel0 = string.Empty;
+    private string _channel4 = string.Empty;
+
+    private readonly List<double> _rawDistances = new();
+    private string[] _distanceLabels = new string[10];
+    private List<ChartSeries> _distances = new();
+    private readonly ChartOptions _distanceOptions = new();
+
+    //private LedMode _selectedMode = LedMode.None;
+
+    private TimeSpan? _upTime;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(_navigationManager.ToAbsoluteUri("/hexapod-comms"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        _voltageOptions.MaxNumYAxisTicks = 9;
+        _voltageOptions.YAxisLines = true;
+        _voltageOptions.YAxisTicks = 1;
+
+        /*
+        _hubConnection.On<HexapodCommand, string>("ReceiveMessage", (command, message) =>
+        {
+            switch (command)
+            {
+                case HexapodCommand.I2CDetectResult:
+                    _devices = JsonSerializer.Deserialize<List<DeviceRow>>(message);
+                    StateHasChanged();
+                    break;
+                case HexapodCommand.AdcResult:
+                    _rawVoltages.Add(JsonSerializer.Deserialize<VoltageReading>(message)!);
+                    var last10Voltages = _rawVoltages.OrderBy(x => x.Time).Take(10).ToList();
+                    _voltageLabels = new string[last10Voltages.Count];
+                    _voltages = new List<ChartSeries>()
+                    {
+                        new() {Name = "Channel 0", Data = new double[last10Voltages.Count]},
+                        new() {Name = "Channel 4", Data = new double[last10Voltages.Count]},
+                    };
+                    for (var index = 0; index < last10Voltages.Count(); index++)
+                    {
+                        if (index is 0 or 10 || index == last10Voltages.Count())
+                        {
+                            _voltageLabels[index] = last10Voltages[index].Time.ToString("hh:mm:ss tt");
+                        }
+                        else
+                        {
+                            _voltageLabels[index] = string.Empty;
+                        }
+                        _voltages[0].Data[index] = last10Voltages[index].Voltage1;
+                        _voltages[1].Data[index] = last10Voltages[index].Voltage2;
+                    }
+                    _channel0 = last10Voltages.Last().Voltage1.ToString(CultureInfo.InvariantCulture);
+                    _channel4 = last10Voltages.Last().Voltage2.ToString(CultureInfo.InvariantCulture);
+                    StateHasChanged();
+                    break;
+                case HexapodCommand.DistanceResult:
+                    Console.WriteLine($"distance result: {message}");
+                    _rawDistances.Add(Convert.ToDouble(message));
+                    var last100Distances = _rawDistances.Take(100).ToList();
+                    _distanceLabels = new string[last100Distances.Count];
+                    _distances = new List<ChartSeries>()
+                    {
+                        new() {Name = "Distances", Data = new double[last100Distances.Count]}
+                    };
+                    for (var index = 0; index < last100Distances.Count(); index++)
+                    {
+                        _distanceLabels[index] = string.Empty;
+                        _distances[0].Data[index] = last100Distances[index];
+                    }
+                    StateHasChanged();
+                    break;
+                case HexapodCommand.UpTimeResult:
+                    _upTime = new TimeSpan(Convert.ToInt64(message));
+                    StateHasChanged();
+                    break;
+                case HexapodCommand.None:
+                case HexapodCommand.Led:
+                case HexapodCommand.I2CDetect:
+                case HexapodCommand.Chat:
+                case HexapodCommand.Adc:
+                case HexapodCommand.UpTime:
+                case HexapodCommand.Distance:
+                default:
+                    var encodedMsg = $"{command}: {message}";
+                    _messages.Reverse();
+                    _messages.Add(encodedMsg);
+                    _messages.Reverse();
+                    break;
+            }
+            StateHasChanged();
+        });
+        */
+
+        await _hubConnection.StartAsync();
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        //_hubConnection?.SendAsync("SendMessage", HexapodCommand.Adc);
+    }
+
+    public bool IsConnected =>
+        _hubConnection is {State: HubConnectionState.Connected };
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection != null) await _hubConnection.DisposeAsync();
+    }
+
+    void SendLedMode()
+    {
+        StateHasChanged();
+        //_hubConnection?.SendAsync("SendMessage", HexapodCommand.Led, _selectedMode.ToString());
+    }
+
+    void SendChat(string? message)
+    {
+        ChatMessage = string.Empty;
+        StateHasChanged();
+        //_hubConnection?.SendAsync("SendMessage", HexapodCommand.Chat, message);
+    }
+
+    void I2CDetect()
+    {
+        StateHasChanged();
+        //_hubConnection?.SendAsync("SendMessage", HexapodCommand.I2CDetect, string.Empty);
+    }
+
+    static string GetI2CDetectStyle(string device)
+    {
+        return device switch
+        {
+            "--" => "background-color:#000000",
+            "" => string.Empty,
+            _ => "background-color:#005f00"
+            };
+    }
+
+}
