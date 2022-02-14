@@ -22,4 +22,8 @@
 	  <_ContentIncludedByDefault Remove="Components\DistanceGraph.razor" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="obj\Release\net6.0" />
+	</ItemGroup>
+
 </Project>

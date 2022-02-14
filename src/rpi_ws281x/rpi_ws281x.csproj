@@ -6,6 +6,10 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="obj\Release\net6.0" />
+  </ItemGroup>
+
   <!--
   <PropertyGroup Label="Package">
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>

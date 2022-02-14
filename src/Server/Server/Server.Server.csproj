@@ -23,6 +23,7 @@
 
 	<ItemGroup>
 	  <Folder Include="Controllers" />
+	  <Folder Include="obj\Release\net6.0" />
 	</ItemGroup>
 
 
