@@ -5,6 +5,7 @@ using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
 using BotConsole;
 using BotConsole.Features.ADC;
+using BotConsole.Features.Buzzer;
 using BotConsole.Features.Camera;
 using BotConsole.Features.I2C;
 using BotConsole.Features.LED;
@@ -23,7 +24,8 @@ var runner = BuildCommandLine()
         .UseCommandHandler<CameraCommand, CameraCommand.Handler>()
         .UseCommandHandler<I2CDetectCommand, I2CDetectCommand.Handler>()
         .UseCommandHandler<LedCommand, LedCommand.Handler>()
-        .UseCommandHandler<SonarCommand, SonarCommand.Handler>()).UseDefaults().Build();
+        .UseCommandHandler<SonarCommand, SonarCommand.Handler>()
+        .UseCommandHandler<BuzzerCommand, BuzzerCommand.Handler>()).UseDefaults().Build();
 
 return await runner.InvokeAsync(args);
 
@@ -42,7 +44,8 @@ static CommandLineBuilder BuildCommandLine()
             new CameraCommand(),
             new I2CDetectCommand(),
             new LedCommand(),
-            new SonarCommand()
+            new SonarCommand(),
+            new BuzzerCommand()
         };
         return command;
     }

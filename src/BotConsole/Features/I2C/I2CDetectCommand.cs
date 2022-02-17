@@ -6,7 +6,7 @@ namespace BotConsole.Features.I2C;
 public class I2CDetectCommand : Command
 {
     public I2CDetectCommand()
-        : base(name: "i2cdetect", "equivalent of i2cdetect -y 1")
+        : base(name: "i2cdetect", "Equivalent of i2cdetect -y 1")
     {
         
     }
